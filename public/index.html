@@ -1,14 +1,11 @@
 <script>
 async function handleAuth(event, type) {
-    event.preventDefault(); // පිටුව Refresh වීම නතර කරයි
-    
+    event.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
-    const endpoint = type === 'signup' ? '/api/signup' : '/api/signin';
-
     try {
-        const response = await fetch(endpoint, {
+        const response = await fetch(`/api/${type}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
@@ -18,13 +15,13 @@ async function handleAuth(event, type) {
 
         if (data.success) {
             alert(data.message);
-            // සාර්ථක වූ පසු යා යුතු පිටුවේ නම මෙතැනට දාන්න (උදා: dashboard.html)
-            window.location.href = 'dashboard.html'; 
+            // සාර්ථක නම් dashboard.html වෙත යන්න
+            window.location.href = 'dashboard.html';
         } else {
             alert(data.error);
         }
-    } catch (error) {
-        alert("Something went wrong. Please try again.");
+    } catch (err) {
+        alert("Server error, please try again later.");
     }
 }
 </script>
