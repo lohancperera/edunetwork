@@ -34,6 +34,7 @@ app.post('/api/signup', async (req, res) => {
         res.status(201).json({ success: true, message: "Sign Up Successful!" });
     } catch (error) {
         res.status(400).json({ success: false, error: "Email already exists!" });
+        app.use(express.static(path.join(__dirname, 'public')));
     }
 });
 
