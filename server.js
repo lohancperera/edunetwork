@@ -21,7 +21,7 @@ if (!fs.existsSync('./uploads')) {
 }
 
 // ඔබේ MongoDB Link එක මෙතැනට දාන්න (දැනට මෙය local database එකකට සම්බන්ධයි)
-mongoose.connect('mongodb+srv://lohancperera_db_user:#Lohan200122503384#@cluster0.jy5zuqd.mongodb.net/?appName=Cluster0', { 
+mongoose.connect('mongodb+srv://lohancperera_db_user:%23Lohan200122503384%23@cluster0.jy5zuqd.mongodb.net/?appName=Cluster0', { 
     useNewUrlParser: true, 
     useUnifiedTopology: true 
 }).then(() => console.log("Database Connected!"))
