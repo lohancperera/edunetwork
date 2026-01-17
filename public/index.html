@@ -1,0 +1,30 @@
+<script>
+async function handleAuth(event, type) {
+    event.preventDefault(); // පිටුව Refresh වීම නතර කරයි
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+
+    const endpoint = type === 'signup' ? '/api/signup' : '/api/signin';
+
+    try {
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            alert(data.message);
+            // සාර්ථක වූ පසු යා යුතු පිටුවේ නම මෙතැනට දාන්න (උදා: dashboard.html)
+            window.location.href = 'dashboard.html'; 
+        } else {
+            alert(data.error);
+        }
+    } catch (error) {
+        alert("Something went wrong. Please try again.");
+    }
+}
+</script>

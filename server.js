@@ -1,81 +1,61 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const http = require('http');
-const { Server } = require('socket.io');
-const cors = require('cors');
-const multer = require('multer');
+const bodyParser = require('body-parser');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
 
-app.use(cors());
-app.use(express.json());
-app.use('/uploads', express.static('uploads')); 
+// Middleware
+app.use(bodyParser.json());
+// HTML/CSS ෆයිල්ස් තියෙන 'public' ෆෝල්ඩරය හඳුන්වා දීම
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Uploads ෆෝල්ඩරය නොමැති නම් එය සෑදීම
-if (!fs.existsSync('./uploads')) {
-    fs.mkdirSync('./uploads');
-}
+// MongoDB Connection String (Password encoded with %23 for #)
+const mongoURI = "mongodb+srv://lohancperera_db_user:%23Lohan200122503384%23@cluster0.jy5zuqd.mongodb.net/edunetwork?retryWrites=true&w=majority&appName=Cluster0";
 
-// ඔබේ MongoDB Link එක මෙතැනට දාන්න (දැනට මෙය local database එකකට සම්බන්ධයි)
-mongoose.connect('mongodb+srv://lohancperera_db_user:%23Lohan200122503384%23@cluster0.jy5zuqd.mongodb.net/?appName=Cluster0', { 
-    useNewUrlParser: true, 
-    useUnifiedTopology: true 
-}).then(() => console.log("Database Connected!"))
-  .catch(err => console.error("Connection Error:", err));
+mongoose.connect(mongoURI)
+    .then(() => console.log("MongoDB Connected Successfully"))
+    .catch(err => console.log("MongoDB Connection Error: ", err));
 
-// පෝස්ට් එකක ආකෘතිය
-const Post = mongoose.model('Post', {
-    user: String,
-    content: String,
-    image: String,
-    date: { type: Date, default: Date.now }
+// User Schema (දත්ත ගබඩා වන ආකාරය)
+const userSchema = new mongoose.Schema({
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true }
 });
 
-// පින්තූර අප්ලෝඩ් කිරීමේ සැකසුම්
-const storage = multer.diskStorage({
-    destination: './uploads/',
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage: storage });
+const User = mongoose.model('User', userSchema);
 
-// --- API පද්ධතිය ---
-
-// පෝස්ට් එකක් දැමීම
-app.post('/api/posts', upload.single('image'), async (req, res) => {
+// Sign Up Route (අලුතින් එකවුන්ට් එකක් හැදීම)
+app.post('/api/signup', async (req, res) => {
     try {
-        const newPost = new Post({
-            user: req.body.user || "Anonymous User",
-            content: req.body.content,
-            image: req.file ? req.file.filename : null
-        });
-        await newPost.save();
-        res.json(newPost);
-    } catch (err) { res.status(500).send(err); }
+        const { email, password } = req.body;
+        const newUser = new User({ email, password });
+        await newUser.save();
+        res.status(201).json({ success: true, message: "Sign Up Successful!" });
+    } catch (error) {
+        res.status(400).json({ success: false, error: "Email already exists!" });
+    }
 });
 
-// සියලුම පෝස්ට් ලබාගැනීම
-app.get('/api/posts', async (req, res) => {
-    const posts = await Post.find().sort({ date: -1 });
-    res.json(posts);
+// Sign In Route (ලොග් වීම පරීක්ෂා කිරීම)
+app.post('/api/signin', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const user = await User.findOne({ email, password });
+        if (user) {
+            res.status(200).json({ success: true, message: "Sign In Successful!" });
+        } else {
+            res.status(401).json({ success: false, error: "Invalid Email or Password!" });
+        }
+    } catch (error) {
+        res.status(500).json({ success: false, error: "Server Error!" });
+    }
 });
 
-// සෙවුම් පද්ධතිය (Search)
-app.get('/api/search', async (req, res) => {
-    const query = req.query.q;
-    const results = await Post.find({ content: new RegExp(query, 'i') });
-    res.json(results);
+// Vercel සඳහා අවශ්‍ය Port සැකසුම
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
 
-// Real-time Chat එක
-io.on('connection', (socket) => {
-    socket.on('send_message', (data) => {
-        io.emit('receive_message', data);
-    });
-});
-
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
+module.exports = app;
